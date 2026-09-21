@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pulse — social feed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAFAF7;
+    --ink: #1C1B19;
+    --ink-soft: #6B6862;
+    --ink-faint: #A8A499;
+    --border: #E4E1D8;
+    --accent: #5B7A5B;
+    --accent-soft: #E7EEE7;
+    --danger: #B0503F;
+    color-scheme: light dark;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper: #17160F;
+      --ink: #ECE9E0;
+      --ink-soft: #A39E90;
+      --ink-faint: #6E6A5E;
+      --border: #322F26;
+      --accent: #8CAE8C;
+      --accent-soft: #22291F;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #17160F;
+    --ink: #ECE9E0;
+    --ink-soft: #A39E90;
+    --ink-faint: #6E6A5E;
+    --border: #322F26;
+    --accent: #8CAE8C;
+    --accent-soft: #22291F;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 18px 60px; }
+
+  header.top {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    background: var(--paper);
+    z-index: 5;
+    padding: 18px 0 14px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .wordmark {
+    font-family: 'Source Serif 4', serif;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .theme-toggle {
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--ink-soft);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { border-color: var(--ink-faint); }
+
+  .composer {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .composer textarea {
+    width: 100%;
+    resize: none;
+    border: none;
+    background: none;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 4px 0;
+    min-height: 44px;
+  }
+  .composer textarea:focus { outline: none; }
+  .composer textarea::placeholder { color: var(--ink-faint); }
+  .composer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+  .char-count { font-size: 12px; color: var(--ink-faint); }
+  .post-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 20px;
+    padding: 8px 18px;
+    cursor: pointer;
+  }
+  .post-btn:disabled { opacity: 0.35; cursor: default; }
+  .post-btn:not(:disabled):active { transform: scale(0.97); }
+  .error-msg {
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 6px;
+    min-height: 14px;
+  }
+
+  .post {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .post-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--paper);
+    flex-shrink: 0;
+  }
+  .who { display: flex; flex-direction: column; }
+  .name { font-family: 'Source Serif 4', serif; font-size: 15px; font-weight: 600; }
+  .meta { font-size: 12px; color: var(--ink-faint); }
+  .body-text {
+    font-size: 15.5px;
+    line-height: 1.65;
+    margin: 0 0 12px;
+    white-space: pre-wrap;
+  }
+  .actions { display: flex; align-items: center; gap: 18px; }
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-soft);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 4px 2px;
+  }
+  .action-btn svg { width: 17px; height: 17px; }
+  .action-btn.liked { color: var(--accent); }
+  .action-btn.liked svg { fill: var(--accent); }
+  .action-btn:hover { color: var(--ink); }
+  .action-btn.liked:hover { color: var(--accent); }
+
+  .comments { margin-top: 14px; }
+  .comment {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+    font-size: 13.5px;
+  }
+  .comment .avatar { width: 26px; height: 26px; font-size: 10px; }
+  .comment-body { line-height: 1.5; }
+  .comment-name { font-weight: 600; margin-right: 6px; }
+  .comment-name.serif { font-family: 'Source Serif 4', serif; }
+  .comment-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .comment-input-row input {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--accent-soft);
+    color: var(--ink);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+  }
+  .comment-input-row input:focus { outline: none; border-color: var(--accent); }
+  .comment-send {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 4px 6px;
+  }
+  .comment-send:disabled { color: var(--ink-faint); cursor: default; }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink-faint);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="wordmark">Pulse</span>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle color theme">dark</button>
+  </header>
+
+  <section class="composer">
+    <textarea id="composeInput" placeholder="What's on your mind?" rows="2" maxlength="280"></textarea>
+    <div class="composer-row">
+      <span class="char-count" id="charCount">280 left</span>
+      <button class="post-btn" id="postBtn" disabled>Post</button>
+    </div>
+    <div class="error-msg" id="composeError"></div>
+  </section>
+
+  <main id="feed"></main>
+</div>
+
+<script>
+  const PALETTE = ['#5B7A5B', '#8C6E4A', '#4A6B8C', '#8C4A6E', '#6E5B8C', '#8C7A4A'];
+
+  function hashColor(name) {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+    return PALETTE[Math.abs(h) % PALETTE.length];
+  }
+
+  function initials(name) {
+    return name.trim().split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  function timeAgo(ts) {
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if (s < 60) return 'just now';
+    const m = Math.floor(s / 60);
+    if (m < 60) return m + 'm';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + 'h';
+    return Math.floor(h / 24) + 'd';
+  }
+
+  const SEED = [
+    {
+      id: 'p1', name: 'Maya Rodriguez', ts: Date.now() - 1000 * 60 * 47,
+      text: "Finally repotted every plant on the balcony this weekend. Didn't realize how much I'd been avoiding it.",
+      liked: false, likes: 12,
+      comments: [{ name: 'Alex Lin', text: 'The eternal chore. Send photos!' }]
+    },
+    {
+      id: 'p2', name: 'Deepak Kumar', ts: Date.now() - 1000 * 60 * 60 * 3,
+      text: "New filter coffee place near the office is genuinely great. Small counter, no seating, exactly how it should be.",
+      liked: true, likes: 34,
+      comments: []
+    },
+    {
+      id: 'p3', name: 'Alex Lin', ts: Date.now() - 1000 * 60 * 60 * 22,
+      text: "Reminder to myself: a walk without headphones once a day. It's doing more than I expected.",
+      liked: false, likes: 8,
+      comments: [
+        { name: 'Maya Rodriguez', text: 'Stealing this habit' },
+        { name: 'Deepak Kumar', text: 'Underrated advice honestly' }
+      ]
+    }
+  ];
+
+  const STORAGE_KEY = 'pulse-feed-posts-v1';
+  const THEME_KEY = 'pulse-feed-theme';
+  let posts = [];
+  let openComments = new Set();
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      posts = raw ? JSON.parse(raw) : SEED;
+    } catch (e) {
+      posts = SEED;
+    }
+  }
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(posts)); }
+    catch (e) { /* storage unavailable, continue in-memory */ }
+  }
+
+  function loadTheme() {
+    try {
+      const t = localStorage.getItem(THEME_KEY);
+      if (t === 'dark' || t === 'light') {
+        document.documentElement.setAttribute('data-theme', t);
+        document.getElementById('themeToggle').textContent = t === 'dark' ? 'light' : 'dark';
+      }
+    } catch (e) {}
+  }
+
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    document.getElementById('themeToggle').textContent = next === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  });
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function avatarHtml(name, cls) {
+    return `<div class="avatar ${cls || ''}" style="background:${hashColor(name)}">${initials(name)}</div>`;
+  }
+
+  const heartOutline = `<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M12 20.5s-7.5-4.6-9.8-9.2C.6 7.8 2.4 4.5 5.8 4c2-.3 3.9.7 5.2 2.6C12.3 4.7 14.2 3.7 16.2 4c3.4.5 5.2 3.8 3.6 7.3C17.5 15.9 12 20.5 12 20.5z"/></svg>`;
+  const commentIcon = `<svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8"><path d="M21 12c0 4.4-4 8-9 8-1.2 0-2.4-.2-3.4-.6L3 20l1.1-4.2C3.4 14.6 3 13.3 3 12c0-4.4 4-8 9-8s9 3.6 9 8z"/></svg>`;
+
+  function render() {
+    const feed = document.getElementById('feed');
+    if (!posts.length) {
+      feed.innerHTML = `<div class="empty">No posts yet. Start the conversation above.</div>`;
+      return;
+    }
+    feed.innerHTML = posts.map(p => {
+      const commentsOpen = openComments.has(p.id);
+      const commentList = p.comments.map(c => `
+        <div class="comment">
+          ${avatarHtml(c.name)}
+          <div class="comment-body">
+            <span class="comment-name serif">${escapeHtml(c.name)}</span>${escapeHtml(c.text)}
+          </div>
+        </div>`).join('');
+      return `
+      <article class="post" data-id="${p.id}">
+        <div class="post-head">
+          ${avatarHtml(p.name)}
+          <div class="who">
+            <span class="name">${escapeHtml(p.name)}</span>
+            <span class="meta">${timeAgo(p.ts)}</span>
+          </div>
+        </div>
+        <p class="body-text">${escapeHtml(p.text)}</p>
+        <div class="actions">
+          <button class="action-btn ${p.liked ? 'liked' : ''}" data-action="like">
+            ${heartOutline}<span>${p.likes}</span>
+          </button>
+          <button class="action-btn" data-action="toggle-comments">
+            ${commentIcon}<span>${p.comments.length}</span>
+          </button>
+        </div>
+        ${commentsOpen ? `
+        <div class="comments">
+          ${commentList}
+          <div class="comment-input-row">
+            <input type="text" placeholder="Write a comment" data-role="comment-input" maxlength="200">
+            <button class="comment-send" data-action="send-comment" disabled>Send</button>
+          </div>
+          <div class="error-msg" data-role="comment-error"></div>
+        </div>` : ''}
+      </article>`;
+    }).join('');
+  }
+
+  document.getElementById('feed').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const article = e.target.closest('.post');
+    const id = article.dataset.id;
+    const post = posts.find(p => p.id === id);
+
+    if (btn.dataset.action === 'like') {
+      post.liked = !post.liked;
+      post.likes += post.liked ? 1 : -1;
+      save();
+      render();
+    } else if (btn.dataset.action === 'toggle-comments') {
+      if (openComments.has(id)) openComments.delete(id);
+      else openComments.add(id);
+      render();
+      if (openComments.has(id)) {
+        const input = document.querySelector(`.post[data-id="${id}"] [data-role="comment-input"]`);
+        if (input) input.focus();
+      }
+    } else if (btn.dataset.action === 'send-comment') {
+      const input = article.querySelector('[data-role="comment-input"]');
+      const errEl = article.querySelector('[data-role="comment-error"]');
+      const text = input.value.trim();
+      if (!text) {
+        errEl.textContent = 'Write something before sending.';
+        return;
+      }
+      errEl.textContent = '';
+      post.comments.push({ name: 'You', text });
+      save();
+      render();
+      openComments.add(id);
+      const reopened = document.querySelector(`.post[data-id="${id}"] [data-role="comment-input"]`);
+      if (reopened) reopened.focus();
+    }
+  });
+
+  document.getElementById('feed').addEventListener('input', (e) => {
+    if (e.target.dataset.role === 'comment-input') {
+      const article = e.target.closest('.post');
+      const sendBtn = article.querySelector('[data-action="send-comment"]');
+      sendBtn.disabled = e.target.value.trim().length === 0;
+      const errEl = article.querySelector('[data-role="comment-error"]');
+      if (errEl && e.target.value.trim().length > 0) errEl.textContent = '';
+    }
+  });
+
+  document.getElementById('feed').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.dataset.role === 'comment-input') {
+      const article = e.target.closest('.post');
+      const sendBtn = article.querySelector('[data-action="send-comment"]');
+      if (!sendBtn.disabled) sendBtn.click();
+    }
+  });
+
+  const composeInput = document.getElementById('composeInput');
+  const postBtn = document.getElementById('postBtn');
+  const charCount = document.getElementById('charCount');
+  const composeError = document.getElementById('composeError');
+
+  composeInput.addEventListener('input', () => {
+    const len = composeInput.value.length;
+    charCount.textContent = (280 - len) + ' left';
+    postBtn.disabled = composeInput.value.trim().length === 0;
+    if (composeInput.value.trim().length > 0) composeError.textContent = '';
+    composeInput.style.height = 'auto';
+    composeInput.style.height = composeInput.scrollHeight + 'px';
+  });
+
+  postBtn.addEventListener('click', () => {
+    const text = composeInput.value.trim();
+    if (!text) {
+      composeError.textContent = 'Write something before posting.';
+      return;
+    }
+    posts.unshift({
+      id: 'p' + Date.now(),
+      name: 'You',
+      ts: Date.now(),
+      text,
+      liked: false,
+      likes: 0,
+      comments: []
+    });
+    composeInput.value = '';
+    composeInput.style.height = 'auto';
+    charCount.textContent = '280 left';
+    postBtn.disabled = true;
+    composeError.textContent = '';
+    save();
+    render();
+  });
+
+  loadTheme();
+  load();
+  render();
+</script>
+</body>
+</html>
